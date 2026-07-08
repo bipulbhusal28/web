@@ -1,7 +1,581 @@
-cd c:\bipul\html
-git init
-git add .
-git commit -m "Initial commit"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
-git push -u origin main
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Advanced Java & Distributed Systems Assignment</title>
+    <style>
+        :root {
+            --primary: #1e293b;
+            --secondary: #0f172a;
+            --accent: #2563eb;
+            --bg-code: #f8fafc;
+            --border-code: #cbd5e1;
+            --text: #334155;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            margin: 40px auto;
+            max-width: 900px;
+            padding: 0 20px;
+        }
+        h1 {
+            color: var(--primary);
+            text-align: center;
+            border-bottom: 3px solid var(--accent);
+            padding-bottom: 15px;
+            font-size: 28px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        h2 {
+            color: var(--secondary);
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 8px;
+            margin-top: 40px;
+            font-size: 20px;
+        }
+        h3 {
+            color: var(--accent);
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        p, li {
+            font-size: 14px;
+            text-align: justify;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 13px;
+        }
+        th, td {
+            border: 1px solid #cbd5e1;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f1f5f9;
+            color: var(--secondary);
+            font-weight: 600;
+        }
+        pre {
+            background-color: var(--bg-code);
+            border: 1px solid var(--border-code);
+            border-left: 4px solid var(--accent);
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Courier New', Courier, monospace;
+            font-size: 12.5px;
+            line-height: 1.4;
+            margin: 15px 0;
+        }
+        .diagram-placeholder {
+            border: 2px dashed var(--border-code);
+            background-color: #fafafa;
+            padding: 30px;
+            text-align: center;
+            margin: 20px 0;
+            font-style: italic;
+            border-radius: 6px;
+            color: #64748b;
+        }
+        .flow-step {
+            background: #f1f5f9;
+            padding: 10px 15px;
+            margin: 5px 0;
+            border-radius: 4px;
+            font-size: 13.5px;
+            border-left: 3px solid #64748b;
+        }
+        
+        /* Print Configuration Optimizations */
+        @media print {
+            body {
+                margin: 20px;
+                color: #000;
+            }
+            h2, h3, pre, table {
+                page-break-inside: avoid;
+            }
+            pre {
+                white-space: pre-wrap;
+                word-wrap: break-word;
+                background-color: #f8fafc !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            th {
+                background-color: #f1f5f9 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Advanced Java & Distributed Systems Assignment</h1>
+
+    <!-- Q1 -->
+    <h2>1. TCP Client-Server Application (String Length Counter)</h2>
+    <h3>Flow of Communication</h3>
+    <div class="flow-step"><strong>1. Server Bind & Listen:</strong> The server establishes a <code>ServerSocket</code> on port 5000 and executes a blocking <code>accept()</code> method, waiting passively for clients.</div>
+    <div class="flow-step"><strong>2. Client Connection:</strong> The client instantiates a standard <code>Socket</code> using the host IP and port. This initiates the underlying TCP 3-way handshake (SYN, SYN-ACK, ACK).</div>
+    <div class="flow-step"><strong>3. Stream Setup:</strong> Upon handshake validation, both endpoints extract <code>InputStream</code> and <code>OutputStream</code> objects, wrapped inside <code>BufferedReader</code> and <code>PrintWriter</code> layers.</div>
+    <div class="flow-step"><strong>4. Payload Transmission:</strong> The client writes text into its output stream. The server breaks its blocking state on <code>readLine()</code> and captures the character payload string.</div>
+    <div class="flow-step"><strong>5. Logic Execution & Echo:</strong> The server calculates the character length using <code>string.length()</code>, sends the integer back, and both elements safely teardown connection contexts via <code>close()</code>.</div>
+
+    <h3>TCPServer.java</h3>
+<pre>
+import java.io.*;
+import java.net.*;
+
+public class TCPServer {
+    public static void main(String[] args) {
+        int port = 5000;
+        try (ServerSocket serverSocket = new ServerSocket(port)) {
+            System.out.println("Server listening on port " + port + "...");
+            while (true) {
+                try (Socket clientSocket = serverSocket.accept();
+                     BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                     PrintWriter writer = new PrintWriter(clientSocket.getOutputStream(), true)) {
+                    
+                    String inputClientString = reader.readLine();
+                    if (inputClientString != null) {
+                        writer.println(inputClientString.length());
+                    }
+                }
+            }
+        } catch (IOException e) { e.printStackTrace(); }
+    }
+}
+</pre>
+
+    <h3>TCPClient.java</h3>
+<pre>
+import java.io.*;
+import java.net.*;
+
+public class TCPClient {
+    public static void main(String[] args) {
+        try (Socket socket = new Socket("localhost", 5000);
+             PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+            
+            String text = "Distributed Systems Assignment Engineering";
+            writer.println(text);
+            System.out.println("Server Response (Length): " + reader.readLine());
+        } catch (IOException e) { e.printStackTrace(); }
+    }
+}
+</pre>
+
+    <!-- Q2 -->
+    <h2>2. JavaMail API & Protocols</h2>
+    <p>The <strong>JavaMail API</strong> is an abstract, platform-independent framework designed to build robust messaging and email clients within Java applications. It isolates developers from dealing with low-level socket programming and raw RFC network string standards.</p>
+    <h3>Core Core Network Protocols Supported:</h3>
+    <ul>
+        <li><strong>SMTP (Simple Mail Transfer Protocol):</strong> Outgoing mail transportation standard protocol used to push messages from clients to servers or route them between mail nodes. (Port 25 / 587).</li>
+        <li><strong>POP3 (Post Office Protocol v3):</strong> Single-device store-and-forward download protocol. It fetches emails from remote servers onto local mail storage and, by default, deletes them off the server. (Port 110 / 995).</li>
+        <li><strong>IMAP (Internet Message Access Protocol):</strong> Advanced synchronized multi-device retrieval engine. It mirrors state representations natively on the mail server infrastructure directly, enabling remote updates and structural sorting. (Port 143 / 993).</li>
+    </ul>
+
+    <!-- Q3 -->
+    <h2>3. Remote Method Invocation (RMI)</h2>
+    <p><strong>RMI (Remote Method Invocation)</strong> allows an object residing in one JVM to execute method calls on an object running in a completely different JVM across a network connection layer seamlessly.</p>
+    
+    <h3>RMI Layered Architecture Diagram</h3>
+    <div class="diagram-placeholder">
+        [Client Application Workspace]<br>
+        ⬇ (Invokes Abstract Local Method)<br>
+        <strong>[Stub Layer Proxy]</strong> ──(Marshals/Serializes Parameters Over Wire)──➔ <strong>[Remote Ref Layer]</strong><br>
+        ⬇<br>
+        [Low-Level Transport Layer (TCP/JRMP Wire Standard)]<br>
+        ⬇<br>
+        <strong>[Skeleton Layer Proxy]</strong> ──(Unmarshals/Deserializes Raw Objects)──➔ [Server Object Implementation]
+    </div>
+
+    <h3>RMI Sum Interface & Implementation</h3>
+<pre>
+// Calculator.java
+import java.rmi.*;
+public interface Calculator extends Remote {
+    public int computeSum(int num1, int num2) throws RemoteException;
+}
+
+// CalculatorImpl.java
+import java.rmi.server.*;
+import java.rmi.*;
+public class CalculatorImpl extends UnicastRemoteObject implements Calculator {
+    public CalculatorImpl() throws RemoteException { super(); }
+    public int computeSum(int num1, int num2) { return num1 + num2; }
+}
+</pre>
+
+    <h3>RMI Server & Client Bootstrappers</h3>
+<pre>
+// RMIServer.java
+import java.rmi.registry.*;
+public class RMIServer {
+    public static void main(String[] args) {
+        try {
+            Registry registry = LocateRegistry.createRegistry(1099);
+            registry.rebind("CalcService", new CalculatorImpl());
+            System.out.println("RMI Server Active.");
+        } catch (Exception e) { e.printStackTrace(); }
+    }
+}
+
+// RMIClient.java
+import java.rmi.registry.*;
+public class RMIClient {
+    public static void main(String[] args) {
+        try {
+            Registry reg = LocateRegistry.getRegistry("localhost", 1099);
+            Calculator comp = (Calculator) reg.lookup("CalcService");
+            System.out.println("RMI Sum Result: " + comp.computeSum(45, 55));
+        } catch (Exception e) { e.printStackTrace(); }
+    }
+}
+</pre>
+
+    <!-- Q4 -->
+    <h2>4. TCP Sockets vs. UDP Sockets & InetAddress</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Feature Criteria</th>
+                <th>TCP Sockets (Stream-based)</th>
+                <th>UDP Sockets (Datagram-based)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Connection Model</strong></td>
+                <td>Connection-Oriented. Requires handshake setup phase.</td>
+                <td>Connectionless. Dispatches isolated chunks.</td>
+            </tr>
+            <tr>
+                <td><strong>Reliability</strong></td>
+                <td>Guaranteed delivery with automated error retries.</td>
+                <td>Unreliable. Packets can drop or arrive out of sequence.</td>
+            </tr>
+            <tr>
+                <td><strong>Data Transmission</strong></td>
+                <td>Byte Stream format (Continuous sequence).</td>
+                <td>Discrete data packets wrapped within structures.</td>
+            </tr>
+            <tr>
+                <td><strong>Speed Profile</strong></td>
+                <td>Slower because of tracking control overhead.</td>
+                <td>Blazing fast lightweight throughput profile.</td>
+            </tr>
+        </tbody>
+    </table>
+    <h3>InetAddress Class</h3>
+    <p>The <code>java.net.InetAddress</code> class encapsulates IP addresses (both IPv4 and IPv6 specs). It lacks public constructor bindings, routing generation via standard factory methods like <code>InetAddress.getByName(String host)</code> instead.</p>
+
+    <!-- Q5 -->
+    <h2>5. Datagram Architecture & Network Interfaces</h2>
+    <p>Core packages to build UDP connections in Java consist of: <strong><code>DatagramPacket</code></strong> (The data array wrap containing payload content + destination target address tags) and <strong><code>DatagramSocket</code></strong> (The mechanical binding mechanism endpoint utilized to transmit and intercept packets).</p>
+    
+    <h3>Listing IP Addresses Assigned to a Network Interface</h3>
+<pre>
+import java.net.*;
+import java.util.*;
+
+public class NetworkInterfaceLister {
+    public static void main(String[] args) throws Exception {
+        Enumeration&lt;NetworkInterface&gt; interfaces = NetworkInterface.getNetworkInterfaces();
+        for (NetworkInterface ni : Collections.list(interfaces)) {
+            if (!ni.isUp()) continue;
+            System.out.println("NIC: " + ni.getName());
+            Enumeration&lt;InetAddress&gt; addresses = ni.getInetAddresses();
+            for (InetAddress addr : Collections.list(addresses)) {
+                System.out.println("  -> IP Bound: " + addr.getHostAddress());
+            }
+        }
+    }
+}
+</pre>
+
+    <!-- Q6 -->
+    <h2>6. URL and URLConnection Classes with Analysis Parser</h2>
+    <ul>
+        <li><strong><code>URL</code> Class:</strong> Standard descriptor pointing directly towards web resources. Used to dissect addresses into protocol, domain, file assets, etc.</li>
+        <li><strong><code>URLConnection</code> Class:</strong> Structural processing class managing an active data pipeline to a remote asset. Used to view response headers, set parameters, and read data.</li>
+    </ul>
+<pre>
+import java.net.*;
+public class URLComponentParser {
+    public static void main(String[] args) throws Exception {
+        URL url = new URL("https://www.example.com:443/index.html?item=book#anchor");
+        System.out.println("Protocol: " + url.getProtocol());
+        System.out.println("Host Domain: " + url.getHost());
+        System.out.println("Port Target: " + url.getPort());
+        System.out.println("Path Stream: " + url.getPath());
+        System.out.println("Query Context: " + url.getQuery());
+    }
+}
+</pre>
+
+    <!-- Q7 -->
+    <h2>7. Common Object Request Broker Architecture (CORBA)</h2>
+    <p><strong>CORBA</strong> is an open infrastructure standard engineered by the Object Management Group (OMG) enabling completely heterogeneous components deployed in different programming systems to resolve requests cross-network via an independent middleware layout engine.</p>
+    
+    <h3>CORBA Structure Layout</h3>
+    <div class="diagram-placeholder">
+        [Client Application Space Framework] ──➔ [IDL Stub Proxy Wrapper]<br>
+        ⬇ Interface Interoperability Pipeline Link<br>
+        <strong>[ORB Core Component (Object Request Broker Engine)]</strong><br>
+        ⬇ Interface Interoperability Pipeline Link<br>
+        [IDL Skeleton Proxy Engine] ──➔ [Portable Object Adapter (POA)] ──➔ [Target Component Object Servant]
+    </div>
+
+    <h3>RMI vs. CORBA Comparison Matrix</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Operational Metric</th>
+                <th>Java Remote Method Invocation (RMI)</th>
+                <th>CORBA Standard Architecture</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Language Support</strong></td>
+                <td>Homogeneous environment. Strictly Java-to-Java.</td>
+                <td>Heterogeneous ecosystem (Java, C++, Python, Ada).</td>
+            </tr>
+            <tr>
+                <td><strong>Interface Definition</strong></td>
+                <td>Native Java Remote Interfaces.</td>
+                <td>Stand-alone <strong>IDL (Interface Definition Language)</strong>.</td>
+            </tr>
+            <tr>
+                <td><strong>Protocol Target</strong></td>
+                <td>JRMP (Java Remote Method Protocol).</td>
+                <td>IIOP (Internet Inter-ORB Protocol).</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Q8 -->
+    <h2>8. JDBC Driver Paradigms & SQL Injection Mitigation</h2>
+    <ul>
+        <li><strong>Type-1 Driver (JDBC-ODBC Bridge):</strong> Translates operations to native ODBC configurations. Requires client machine configurations. (Obsolete).</li>
+        <li><strong>Type-2 Driver (Native-API Driver):</strong> Conversions route through database-specific local binary client dependencies. Performance scales, but damages portability.</li>
+        <li><strong>Type-3 Driver (Network Protocol Middleware):</strong> Maps methods to a middleware server setup before execution on the target database engine.</li>
+        <li><strong>Type-4 Driver (Thin Pure-Java Driver):</strong> Compiles statements directly into database-specific network protocol streams. High execution tracking and maximum performance.</li>
+    </ul>
+    <h3>SQL Injection Vulnerability Resolution via PreparedStatement</h3>
+    <p>SQL Injection arises when unvalidated text concatenation mutates core query compilation structures. <code>PreparedStatement</code> prevents this security vulnerability by compiling the SQL template structural execution syntax beforehand using positional parameter arguments (<code>?</code> placeholders). Values passed later are processed strictly as literal values rather than executable commands.</p>
+
+    <!-- Q9 -->
+    <h2>9. JDBC Architecture & Connection Integration Script</h2>
+<pre>
+import java.sql.*;
+public class DatabaseConnector {
+    public static void main(String[] args) {
+        String dbUrl = "jdbc:mysql://localhost:3306/db_college";
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            try (Connection conn = DriverManager.getConnection(dbUrl, "root", "password")) {
+                if(conn != null) System.out.println("Database link session active!");
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+    }
+}
+</pre>
+
+    <!-- Q10 -->
+    <h2>10. JDBC Core Component Roles</h2>
+    <ul>
+        <li><strong><code>DriverManager</code> Class:</strong> Factory module tracking registered drivers. Evaluates connection parameters to open communication sessions.</li>
+        <li><strong><code>Connection</code> Interface:</strong> Session context tracking transactions, configuring auto-commit settings, and generating statements.</li>
+    </ul>
+
+    <!-- Q11 -->
+    <h2>11. Full Database CRUD Execution System Console Application</h2>
+<pre>
+import java.sql.*;
+public class StudentConsoleCRUDSystem {
+    private static final String URL = "jdbc:mysql://localhost:3306/db_college";
+    public static void main(String[] args) {
+        try (Connection conn = DriverManager.getConnection(URL, "root", "password")) {
+            // CREATE
+            String createSQL = "INSERT INTO tbl_student (name, faculty, batch) VALUES (?, ?, ?)";
+            try (PreparedStatement pstmt = conn.prepareStatement(createSQL)) {
+                pstmt.setString(1, "Suresh Sharma"); pstmt.setString(2, "Computer"); pstmt.setInt(3, 2023);
+                pstmt.executeUpdate();
+            }
+            // READ
+            String readSQL = "SELECT name FROM tbl_student";
+            try (PreparedStatement pstmt = conn.prepareStatement(readSQL); ResultSet rs = pstmt.executeQuery()) {
+                while(rs.next()) System.out.println("Student Row Name: " + rs.getString("name"));
+            }
+            // UPDATE
+            String updateSQL = "UPDATE tbl_student SET faculty = ? WHERE name = ?";
+            try (PreparedStatement pstmt = conn.prepareStatement(updateSQL)) {
+                pstmt.setString(1, "IT"); pstmt.setString(2, "Suresh Sharma");
+                pstmt.executeUpdate();
+            }
+            // DELETE
+            String deleteSQL = "DELETE FROM tbl_student WHERE name = ?";
+            try (PreparedStatement pstmt = conn.prepareStatement(deleteSQL)) {
+                pstmt.setString(1, "Suresh Sharma");
+                pstmt.executeUpdate();
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
+}
+</pre>
+
+    <!-- Q12 -->
+    <h2>12. Transaction Management Atomic Fund Transfer Engine</h2>
+<pre>
+import java.sql.*;
+public class BankTransactionManager {
+    public static void main(String[] args) {
+        Connection conn = null;
+        try {
+            conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/db_bank", "root", "password");
+            conn.setAutoCommit(false); // Enable manual transaction block demarcation
+
+            try (PreparedStatement debit = conn.prepareStatement("UPDATE tbl_accounts SET balance = balance - ? WHERE id = ?");
+                 PreparedStatement credit = conn.prepareStatement("UPDATE tbl_accounts SET balance = balance + ? WHERE id = ?")) {
+                
+                debit.setDouble(1, 25000.0); debit.setInt(2, 101); debit.executeUpdate();
+                credit.setDouble(1, 25000.0); credit.setInt(2, 102); credit.executeUpdate();
+                
+                conn.commit(); // Commit transaction atomically if all updates succeed
+                System.out.println("Funds transferred successfully.");
+            }
+        } catch (Exception e) {
+            if (conn != null) {
+                try { conn.rollback(); System.out.println("Transaction rolled back."); } catch (SQLException ex) { ex.printStackTrace(); }
+            }
+        }
+    }
+}
+</pre>
+
+    <!-- Q13 -->
+    <h2>13. Static vs. Dynamic Web Apps & Servlets</h2>
+    <p><strong>Static Web Applications</strong> deliver flat, pre-compiled file assets directly from file storage to the client browser without any logical modification. <strong>Dynamic Web Applications</strong> evaluate request arguments at runtime to build unique contextual view documents dynamically using databases and calculation layers.</p>
+    <p>A <strong>Servlet</strong> acts as a server-side controller that catches incoming requests, performs processing logic, reads from data tables, and dynamically generates the response stream returned to the user.</p>
+
+    <!-- Q14 -->
+    <h2>14. Detailed Java Servlet Lifecycle Architectural Phases</h2>
+    <ul>
+        <li><strong>Initialization Phase (<code>init()</code> Method):</strong> Executed exactly once by the container engine context when mounting the servlet memory framework. Best suited for resource configurations like database connections.</li>
+        <li><strong>Request Processing Phase (<code>service()</code> Method):</strong> Fired concurrently across distinct routing worker threads for every inbound request. Inspects the HTTP action verb (GET/POST) to route traffic down to <code>doGet()</code> or <code>doPost()</code> methods.</li>
+        <li><strong>Destruction Phase (<code>destroy()</code> Method):</strong> Triggered exactly once by the container engine configuration prior to garbage collection cleanup. Closes active resource attachments.</li>
+    </ul>
+
+    <!-- Q15 -->
+    <h2>15. The `doGet()` vs. `doPost()` Request Framework Management</h2>
+    <ul>
+        <li><strong><code>doGet()</code>:</strong> Appends parameters to the terminal end of the plaintext URL path context query lines. Constrained by maximum text limits and unsafe for private data parameters.</li>
+        <li><strong><code>doPost()</code>:</strong> Streams data inside the underlying HTTP transport body layer structure. Supports large file buffers and keeps data hidden from the URL bar.</li>
+    </ul>
+
+    <!-- Q16 -->
+    <h2>16. Greeter Form Web Integration Framework</h2>
+    <h3>Form Layout Source Component (`index.html`)</h3>
+<pre>
+&lt;form action="GreetingControllerServlet" method="POST"&gt;
+    Username: &lt;input type="text" name="usernameField" required /&gt;
+    &lt;input type="submit" value="Greet" /&gt;
+&lt;/form&gt;
+</pre>
+
+    <h3>Controller Processing Component (`GreetingControllerServlet.java`)</h3>
+<pre>
+import java.io.*;
+import javax.servlet.*;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.*;
+
+@WebServlet("/GreetingControllerServlet")
+public class GreetingControllerServlet extends HttpServlet {
+    protected void doPost(HttpServletRequest req, HttpServletResponse res) throws IOException {
+        res.setContentType("text/html");
+        String name = req.getParameter("usernameField");
+        res.getWriter().println("&lt;h1&gt;Welcome " + name + "&lt;/h1&gt;");
+    }
+}
+</pre>
+
+    <!-- Q17 -->
+    <h2>17. Web Cookies Generation, Tracking & Retrieval Management</h2>
+    <p>A <strong>Cookie</strong> is a key-value data snippet transmitted via HTTP response headers and stored on the client machine by the browser. It is included in future headers to maintain state across independent HTTP requests.</p>
+<pre>
+import java.io.*;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.*;
+
+@WebServlet("/CookieManager")
+public class CookieManager extends HttpServlet {
+    protected void doGet(HttpServletRequest req, HttpServletResponse res) throws IOException {
+        // Create and write cookie
+        Cookie tracker = new Cookie("userBranch", "ComputerScience");
+        tracker.setMaxAge(60 * 60 * 24);
+        res.addCookie(tracker);
+        
+        // Read cookies
+        Cookie[] jar = req.getCookies();
+        if (jar != null) {
+            for (Cookie c : jar) {
+                res.getWriter().println("Found Cookie: " + c.getName() + " = " + c.getValue());
+            }
+        }
+    }
+}
+</pre>
+
+    <!-- Q18 -->
+    <h2>18. REST HTTP Methods & Live Dynamic JSP Record Renderer</h2>
+    <ul>
+        <li><strong>GET:</strong> Read resource securely without structural mutation side effects. Idempotent.</li>
+        <li><strong>POST:</strong> Create a new record or submit an operation payload entity. Non-idempotent.</li>
+        <li><strong>PUT:</strong> Overwrite a target entity resource fully with updated content parameters. Idempotent.</li>
+        <li><strong>DELETE:</strong> Wipe specific target records from storage systems. Idempotent.</li>
+    </ul>
+    <h3>JSP Viewer (`listStudents.jsp`)</h3>
+<pre>
+&lt;%@ page import="java.sql.*" %&gt;
+&lt;html&gt;
+&lt;body&gt;
+    &lt;table border="1"&gt;
+        &lt;tr&gt;&lt;th&gt;Name&lt;/th&gt;&lt;th&gt;Faculty&lt;/th&gt;&lt;/tr&gt;
+        &lt;%
+            try {
+                Class.forName("com.mysql.cj.jdbc.Driver");
+                try (Connection c = DriverManager.getConnection("jdbc:mysql://localhost:3306/db_college", "root", "password");
+                     Statement s = c.createStatement(); ResultSet r = s.executeQuery("SELECT * FROM tbl_student")) {
+                    while(r.next()) {
+        %&gt;
+        &lt;tr&gt;
+            &lt;td&gt;&lt;%= r.getString("name") %&gt;&lt;/td&gt;
+            &lt;td&gt;&lt;%= r.getString("faculty") %&gt;&lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;%
+                    }
+                }
+            } catch(Exception e) { out.println("Error: " + e.getMessage()); }
+        %&gt;
+    &lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</pre>
+
+</body>
+</html>
